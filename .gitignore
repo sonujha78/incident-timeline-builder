@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Virtualenv
+.venv/
+venv/
+
+# Secrets (kabhi commit nahi)
+.env
+*.pem
+*.key
+
+# Editor / OS
+.vscode/
+.DS_Store
+
+# Live scratch data (recorded incidents data/incidents/ mein track hote hain)
+data/live/
