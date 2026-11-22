@@ -1,0 +1,26 @@
+# Incident Timeline Builder: default config (Step 4: clock section)
+clock:
+  # Source whose clock we trust. Others are corrected towards it.
+  reference_source: docker
+
+  # Timezone of naive timestamps per source (used while collecting).
+  # Examples: "UTC", "+05:30"
+  source_tz: {}
+
+  # Known fixed skew per source in seconds (ADDED to the source time).
+  # Wins over auto estimation. Example: applog: -90
+  manual_skew_s: {}
+
+  auto:
+    enabled: true
+    max_offset_s: 900     # ignore anchor pairs further apart than this
+    max_spread_s: 10      # anchors must agree within this, else not applied
+    min_pairs: 2          # need at least this many anchor pairs
+    min_apply_s: 1.0      # offsets below this are normal delay, left alone
+    anchors:
+      # a git deploy should be followed by a docker restart ~5s later
+      - source: git
+        type: deploy
+        ref_source: docker
+        ref_type: restart
+        expected_lag_s: 5
