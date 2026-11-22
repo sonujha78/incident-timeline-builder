@@ -51,6 +51,11 @@ DEFAULTS = {
             "medium_margin": 8,
         },
     },
+    "report": {
+        "max_timeline_rows": 40,        # keep the timeline table short
+        "after_window_s": 60,           # show events this long after recovery
+        "top_error_messages": 3,        # most frequent error lines in Impact
+    },
 }
 
 
