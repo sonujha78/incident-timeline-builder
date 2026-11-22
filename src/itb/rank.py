@@ -75,8 +75,27 @@ class Confidence:
                 "margin": self.margin, "reasons": list(self.reasons)}
 
 
+LIFECYCLE_AFTER_CHANGE = ("start", "restart", "kill", "stop", "die")  # events a rollout causes
+
+
 def _action(e):
     return str((e.attrs or {}).get("action", ""))
+
+
+def _abnormal(e):
+    """OOM, kill, or a die with a non-zero exit code. A clean exit (0) is not abnormal."""
+    action = _action(e)
+    code = str((e.attrs or {}).get("exit_code", ""))
+    return action in ("oom", "kill") or (action == "die" and code not in ("", "0"))
+
+
+def _grace(cfg, incident):
+    """How long after the first bad probe a change still counts as 'before' it.
+
+    At least one probe interval. start_grace_s widens it to cover the small error
+    that is left after clock correction.
+    """
+    return max(float(incident.probe_interval_s), float(cfg.get("start_grace_s", 0) or 0))
 
 
 def _is_self_symptom(e, incident):
@@ -86,7 +105,7 @@ def _is_self_symptom(e, incident):
 
 def _rollout_of(e, changes, window_s):
     """If e is a container start right after a deploy/config, return that change."""
-    if e.type != "restart" or _action(e) not in ROLLOUT_ACTIONS:
+    if e.type != "restart" or _action(e) not in LIFECYCLE_AFTER_CHANGE:
         return None
     best = None
     for c in changes:
@@ -108,7 +127,7 @@ def _symptoms(events, incident, since, exclude_id):
             continue
         if e.type == "error_log":
             logs.append(e)
-        elif _is_self_symptom(e, incident):
+        elif _is_self_symptom(e, incident) and _abnormal(e):
             exits.append(e)
     return logs, exits
 
@@ -167,7 +186,7 @@ def _stability(cand, probes, incident, cfg, det):
 def _score(cand, events, probes, incident, cfg, det):
     w = cfg["weights"]
     lookback = float(cfg["lookback_s"])
-    grace = float(incident.probe_interval_s)
+    grace = _grace(cfg, incident)
     delta = (incident.start - cand.ts).total_seconds()
     comps = []
 
@@ -205,7 +224,7 @@ def rank_suspects(events, incident, cfg, detection_cfg=None):
     """events: corrected timeline. cfg: the 'ranking' config section."""
     det = detection_cfg or load_config()["detection"]
     lookback = float(cfg["lookback_s"])
-    grace = float(incident.probe_interval_s)
+    grace = _grace(cfg, incident)
     ordered = sorted(events, key=lambda e: (e.ts, e.event_id))
     changes = [e for e in ordered if e.type in ("deploy", "config")]
     probes = [e for e in ordered
@@ -219,13 +238,15 @@ def rank_suspects(events, incident, cfg, detection_cfg=None):
         delta = (incident.start - e.ts).total_seconds()
         if not (-grace <= delta <= lookback):
             continue
-        if _is_self_symptom(e, incident):
+        if _is_self_symptom(e, incident) and (
+                _action(e) == "oom"
+                or _rollout_of(e, changes, float(cfg["rollout_window_s"])) is None):
             suppressed.append((e, f"'{_action(e)}' of the affected service is a "
                                   f"symptom, not a cause"))
             continue
         parent = _rollout_of(e, changes, float(cfg["rollout_window_s"]))
         if parent is not None:
-            suppressed.append((e, f"container start is the rollout of {parent.type} "
+            suppressed.append((e, f"container {_action(e) or 'event'} is part of the rollout of {parent.type} "
                                   f"'{parent.description}', not an independent cause"))
             continue
         candidates.append(e)

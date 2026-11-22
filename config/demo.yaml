@@ -1,0 +1,14 @@
+# Settings for the Docker Compose demo. Merged over the built-in defaults.
+clock:
+  source_tz:
+    applog: "+05:30"          # the demo app logs naive IST time
+  auto:
+    anchors:
+      - source: git
+        type: deploy
+        ref_source: docker
+        ref_type: restart
+        expected_lag_s: 2     # compose recreate: docker start follows the deploy record by ~2s
+
+ranking:
+  start_grace_s: 3            # tolerance left over after clock correction

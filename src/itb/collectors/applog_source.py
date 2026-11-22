@@ -15,7 +15,7 @@ LINE = re.compile(
 KEEP_LEVELS = {"ERROR", "CRITICAL", "FATAL", "WARN", "WARNING"}
 
 
-def collect(path, tz=timezone.utc):
+def collect(path, tz=None):
     """tz = timezone this log's naive timestamps are written in."""
     events = []
     with open(path, encoding="utf-8", errors="replace") as fh:
@@ -23,7 +23,7 @@ def collect(path, tz=timezone.utc):
             m = LINE.match(line.strip())
             if not m or m.group("level") not in KEEP_LEVELS:
                 continue
-            ts = parse_ts(m.group("ts").replace(",", "."), assume_tz=tz)
+            ts = parse_ts(m.group("ts").replace(",", "."), assume_tz=tz or timezone.utc)
             events.append(make_event(
                 ts=ts, source="applog", type="error_log",
                 service=m.group("service"), description=m.group("msg"),

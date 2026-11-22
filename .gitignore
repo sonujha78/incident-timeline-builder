@@ -21,3 +21,6 @@ venv/
 
 # Live scratch data (recorded incidents data/incidents/ mein track hote hain)
 data/live/
+
+# Demo environment runtime files
+demo/run/

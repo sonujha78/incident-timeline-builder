@@ -1,0 +1,4 @@
+{"author":"demo-dev","files":["app/web.py"],"message":"initial release v1","service":"web","sha":"4d9e56afa769e96c3f9da674570826cbe0fb1dc4","ts":"2026-11-22T11:27:19.693+00:00"}
+{"author":"demo-dev","files":["app/http_client.py"],"message":"bump http client timeout, token=[REDACTED]","service":"web","sha":"26edf444cd0ad4c945d502359a63fd6b44df151f","ts":"2026-11-22T11:27:50.636+00:00"}
+{"author":"demo-dev","files":["app/db_client.py","requirements.txt"],"message":"switch to new db driver","service":"web","sha":"eb8c8c10bd2c453a14faf471b00fa8da5d013b72","ts":"2026-11-22T11:29:00.635+00:00"}
+{"author":"demo-dev","files":["app/db_client.py"],"message":"rollback: revert new db driver","service":"web","sha":"d73366585f2f3c92b031cbf2482e8c55df0e9e9d","ts":"2026-11-22T11:30:10.636+00:00"}

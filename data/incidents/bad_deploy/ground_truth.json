@@ -1,0 +1,18 @@
+{
+  "cause": {
+    "match": "switch to new db driver",
+    "service": "web",
+    "type": "deploy"
+  },
+  "description": "A new version switches the db driver and its health check fails; rollback fixes it.",
+  "incident_type": "bad deploy",
+  "injected": {
+    "applog_timezone": "+05:30",
+    "git_clock_skew_s": 60.0,
+    "probe_interval_s": 1.0
+  },
+  "name": "bad_deploy",
+  "tolerance_s": 5.0,
+  "true_end": "2026-11-22T11:29:11.557+00:00",
+  "true_start": "2026-11-22T11:28:00.635+00:00"
+}
