@@ -55,3 +55,9 @@ ranking:
     high_margin: 15
     medium_score: 50
     medium_margin: 8
+
+# Step 7: postmortem report
+report:
+  max_timeline_rows: 40      # older low-priority rows are dropped above this (markers and suspects stay)
+  after_window_s: 60         # show events up to this long after recovery
+  top_error_messages: 3      # most frequent error lines listed under Impact
