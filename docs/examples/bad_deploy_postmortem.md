@@ -75,8 +75,8 @@ Times are UTC after clock correction, from 600s before the incident start until 
 
 ### Events that were not treated as suspects
 
-- 09:58:05Z restart on `web`: container start is the rollout of deploy 'abc1234 refactor cache', not an independent cause
-- 10:00:55Z restart on `web`: container start is the rollout of deploy 'def5678 switch to new db driver', not an independent cause
+- 09:58:05Z restart on `web`: container start is part of the rollout of deploy 'abc1234 refactor cache', not an independent cause
+- 10:00:55Z restart on `web`: container start is part of the rollout of deploy 'def5678 switch to new db driver', not an independent cause
 
 ## Confidence
 
