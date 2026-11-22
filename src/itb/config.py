@@ -31,6 +31,26 @@ DEFAULTS = {
         "min_duration_s": 10,           # shorter closed incidents are dropped
         "merge_gap_s": 30,              # incidents closer than this are merged
     },
+    "ranking": {
+        "lookback_s": 600,              # how far before the incident start to look
+        "top_n": 5,                     # how many suspects reports show
+        "weights": {
+            "proximity": 40,
+            "relation": 15,
+            "corroboration": 15,
+            "evidence": 10,
+        },
+        "type_weights": {"deploy": 20, "config": 15, "restart": 8},
+        "stable_s": 60,                 # healthy this long after a change = weaker suspect
+        "stable_penalty": 25,
+        "rollout_window_s": 60,         # container start this soon after a deploy = rollout
+        "confidence": {
+            "high_score": 70,
+            "high_margin": 15,
+            "medium_score": 50,
+            "medium_margin": 8,
+        },
+    },
 }
 
 
