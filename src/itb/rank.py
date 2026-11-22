@@ -254,13 +254,14 @@ def caveats_from_clocks(estimates):
     return out
 
 
-def assess_confidence(suspects, cfg, caveats=()):
+def assess_confidence(suspects, cfg, caveats=(), severe=()):
     """Turn the ranking into an honest confidence level with reasons."""
     caveats = tuple(caveats)
+    severe = tuple(severe)
     if not suspects:
         return Confidence("low", 0.0, 0.0, (
             "no change event in the lookback window before the incident; "
-            "the cause cannot be determined from this data",) + caveats)
+            "the cause cannot be determined from this data",) + caveats + severe)
     cc = cfg["confidence"]
     hs, hm = float(cc["high_score"]), float(cc["high_margin"])
     ms, mm = float(cc["medium_score"]), float(cc["medium_margin"])
@@ -292,6 +293,11 @@ def assess_confidence(suspects, cfg, caveats=()):
         if level == "high":
             level = "medium"
             reasons.append("downgraded from high because of the caveats above")
+    if severe:
+        reasons.extend(severe)
+        if level != "low":
+            level = "low"
+            reasons.append("forced to low: event order is inconsistent, so the ranking cannot be trusted")
     return Confidence(level, top, margin, tuple(reasons))
 
 
@@ -321,3 +327,30 @@ def format_ranking(ranking, conf, top_n=5):
     for why in conf.reasons:
         lines.append(f"  - {why}")
     return "\n".join(lines)
+
+
+def caveats_from_order(events, window_s=60.0):
+    """Severe caveat: a container start appears BEFORE the change it should follow.
+
+    Normal order is deploy -> container start. The reverse means the source clocks
+    disagree, so every score built on event order is unreliable.
+    """
+    changes = [e for e in events if e.type in ("deploy", "config")]
+    starts = [e for e in events
+              if e.type == "restart" and _action(e) in ROLLOUT_ACTIONS]
+    flagged = []
+    for s in starts:
+        if _rollout_of(s, changes, window_s) is not None:
+            continue                      # normal order: change, then start
+        later = [c for c in changes if c.service == s.service
+                 and 0 < (c.ts - s.ts).total_seconds() <= window_s]
+        if later:
+            flagged.append((s, min(later, key=lambda c: c.ts)))
+    if not flagged:
+        return []
+    s, c = flagged[0]
+    gap = (c.ts - s.ts).total_seconds()
+    return [f"{len(flagged)} container start(s) appear BEFORE the change they should "
+            f"follow (e.g. start on {s.service} at {s.ts.strftime('%H:%M:%S')}Z comes "
+            f"{gap:.0f}s before {c.type} '{c.description}'): source clocks probably "
+            f"disagree"]
