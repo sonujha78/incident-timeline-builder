@@ -33,3 +33,25 @@ detection:
   recover_consecutive: 3       # good probes in a row before it closes
   min_duration_s: 10           # closed incidents shorter than this are dropped
   merge_gap_s: 30              # incidents closer than this are merged (flapping)
+
+# Step 6: suspect ranking (score = sum of explained components, 0-100)
+ranking:
+  lookback_s: 600            # only changes this close before the incident start are suspects
+  top_n: 5
+  weights:
+    proximity: 40            # closer to the incident start = more points
+    relation: 15             # same service, or named in the affected service's error logs
+    corroboration: 15        # error logs / abnormal exits appeared after the change
+    evidence: 10             # direct failure signal on the change (OOM, non-zero exit)
+  type_weights:
+    deploy: 20
+    config: 15
+    restart: 8
+  stable_s: 60               # service healthy this long after a change = weaker suspect
+  stable_penalty: 25
+  rollout_window_s: 60       # container start this soon after a deploy is its rollout, not a cause
+  confidence:
+    high_score: 70
+    high_margin: 15
+    medium_score: 50
+    medium_margin: 8
