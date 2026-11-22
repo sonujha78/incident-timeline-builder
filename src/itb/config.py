@@ -23,6 +23,14 @@ DEFAULTS = {
             ],
         },
     },
+    "detection": {
+        "error_rate_threshold": 0.05,   # probe is bad if error_rate >= this
+        "latency_ms_threshold": 0,      # 0 = latency is not used
+        "start_consecutive": 3,         # bad probes in a row to open an incident
+        "recover_consecutive": 3,       # good probes in a row to close it
+        "min_duration_s": 10,           # shorter closed incidents are dropped
+        "merge_gap_s": 30,              # incidents closer than this are merged
+    },
 }
 
 
