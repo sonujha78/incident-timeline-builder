@@ -8,6 +8,7 @@ from itb.events import make_event
 from itb.metrics import compute_metrics, format_metrics
 from itb.rank import (assess_confidence, caveats_from_clocks, format_ranking,
                       rank_suspects)
+from itb.rank import caveats_from_order
 from itb.timeline import build_timeline, merge
 
 T0 = datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
@@ -55,7 +56,9 @@ def analyse(title, events, correct=True):
         print("no incident detected")
         return
     ranking = rank_suspects(timeline, inc, cfg["ranking"], cfg["detection"])
-    conf = assess_confidence(ranking.suspects, cfg["ranking"], caveats_from_clocks(est))
+    conf = assess_confidence(
+        ranking.suspects, cfg["ranking"], caveats_from_clocks(est),
+        severe=caveats_from_order(timeline, cfg["ranking"]["rollout_window_s"]))
     print(format_ranking(ranking, conf, cfg["ranking"]["top_n"]))
     top = ranking.suspects[0] if ranking.suspects else None
     print(format_metrics(compute_metrics(inc, top)))
