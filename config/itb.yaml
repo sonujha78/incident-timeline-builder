@@ -24,3 +24,12 @@ clock:
         ref_source: docker
         ref_type: restart
         expected_lag_s: 5
+
+# Step 5: incident detection (all thresholds are configurable)
+detection:
+  error_rate_threshold: 0.05   # probe is "bad" if error_rate >= this (or the check failed)
+  latency_ms_threshold: 0      # set e.g. 500 to also treat slow probes as bad; 0 = off
+  start_consecutive: 3         # bad probes in a row before an incident opens (blip filter)
+  recover_consecutive: 3       # good probes in a row before it closes
+  min_duration_s: 10           # closed incidents shorter than this are dropped
+  merge_gap_s: 30              # incidents closer than this are merged (flapping)
