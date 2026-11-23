@@ -220,6 +220,27 @@ def _score(cand, events, probes, incident, cfg, det):
     return round(max(0.0, min(100.0, total)), 1), tuple(comps)
 
 
+def _collapse_bursts(candidates, window_s):
+    """kill + die (+ stop) of one container within window_s is ONE failure.
+
+    Keeps the earliest event; the rest are returned as (event, reason) pairs.
+    """
+    kept, dropped, first_by_box = [], [], {}
+    for e in candidates:
+        if e.type != "restart":
+            kept.append(e)
+            continue
+        key = (e.service, (e.attrs or {}).get("container", ""))
+        first = first_by_box.get(key)
+        if first is not None and 0 <= (e.ts - first.ts).total_seconds() <= window_s:
+            dropped.append((e, f"'{_action(e)}' follows '{_action(first)}' of the same "
+                               f"container within {window_s:.0f}s: one failure, counted once"))
+            continue
+        first_by_box[key] = e
+        kept.append(e)
+    return kept, dropped
+
+
 def rank_suspects(events, incident, cfg, detection_cfg=None):
     """events: corrected timeline. cfg: the 'ranking' config section."""
     det = detection_cfg or load_config()["detection"]
@@ -250,6 +271,9 @@ def rank_suspects(events, incident, cfg, detection_cfg=None):
                                   f"'{parent.description}', not an independent cause"))
             continue
         candidates.append(e)
+
+    candidates, burst = _collapse_bursts(candidates, float(cfg.get("burst_window_s", 5)))
+    suppressed.extend(burst)
 
     scored = []
     for e in candidates:

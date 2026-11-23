@@ -1,0 +1,4 @@
+{"author":"demo-dev","files":["app/web.py"],"message":"initial release v1","service":"web","sha":"4d9e56afa769e96c3f9da674570826cbe0fb1dc4","ts":"2026-11-23T04:51:14.236+00:00"}
+{"author":"demo-dev","files":["app/pool.py"],"message":"tune thread pool size","service":"web","sha":"cbbb1897f8a7b25eecd4387a3962b2e7739125ad","ts":"2026-11-23T04:51:45.644+00:00"}
+{"author":"demo-dev","files":["app/cache.py"],"message":"add in-memory image cache","service":"web","sha":"f04f65c19171babea740f098c4c27d93b72707c3","ts":"2026-11-23T04:52:55.643+00:00"}
+{"author":"demo-dev","files":["app/cache.py"],"message":"rollback: remove in-memory image cache","service":"web","sha":"0ae2059d2a0db5f5bfba8b9e8bb174fba6c15b9e","ts":"2026-11-23T04:54:05.643+00:00"}

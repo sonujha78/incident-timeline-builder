@@ -1,0 +1,18 @@
+{
+  "cause": {
+    "match": "in-memory image cache",
+    "service": "web",
+    "type": "deploy"
+  },
+  "description": "A new version leaks memory and web is OOM-killed; rollback fixes it.",
+  "incident_type": "resource exhaustion",
+  "injected": {
+    "applog_timezone": "+05:30",
+    "git_clock_skew_s": 60.0,
+    "probe_interval_s": 1.0
+  },
+  "name": "resource_exhaustion",
+  "tolerance_s": 5.0,
+  "true_end": "2026-11-23T04:53:06.748+00:00",
+  "true_start": "2026-11-23T04:52:08.106+00:00"
+}

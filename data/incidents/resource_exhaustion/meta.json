@@ -1,0 +1,9 @@
+{
+  "description": "A new version leaks memory and web is OOM-killed; rollback fixes it.",
+  "name": "resource_exhaustion",
+  "probe_interval_s": 1.0,
+  "recorded_with": "demo/scenario.py",
+  "source_tz": {
+    "applog": "+05:30"
+  }
+}

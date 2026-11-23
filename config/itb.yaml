@@ -49,6 +49,7 @@ ranking:
     restart: 8
   stable_s: 60               # service healthy this long after a change = weaker suspect
   stable_penalty: 25
+  burst_window_s: 5            # die/stop right after kill of the same container = one failure
   rollout_window_s: 60       # container start this soon after a deploy is its rollout, not a cause
   confidence:
     high_score: 70

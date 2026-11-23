@@ -43,6 +43,7 @@ DEFAULTS = {
         "type_weights": {"deploy": 20, "config": 15, "restart": 8},
         "stable_s": 60,                 # healthy this long after a change = weaker suspect
         "stable_penalty": 25,
+        "burst_window_s": 5,            # die/stop right after kill of the same container = one failure
         "rollout_window_s": 60,         # container start this soon after a deploy = rollout
         "confidence": {
             "high_score": 70,
