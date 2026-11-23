@@ -1,0 +1,74 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Ground-truth check (fails if a result differs from the known cause)
+        run: |
+          set -o pipefail
+          itb check -v --markdown results.md | tee check.txt
+
+      - name: Show result table in the job summary
+        if: always()
+        run: |
+          if [ -f results.md ]; then cat results.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Committed reports must match a fresh run (reproducibility)
+        run: |
+          mkdir -p fresh
+          for d in data/incidents/*/; do
+            n=$(basename "$d")
+            itb analyze "$d" --config config/demo.yaml --out "fresh/$n.md" > /dev/null
+            cmp "fresh/$n.md" "reports/$n.md" && echo "identical: $n"
+          done
+
+      - name: Secret scan (no demo secret may appear anywhere)
+        run: |
+          if grep -rE "Demo-S3cret-pw|demo-token-abc123xyz|demo-key-98765" data reports docs fresh; then
+            echo "demo secret found in output"; exit 1
+          fi
+          echo "no secrets found"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: incident-reports-py${{ matrix.python-version }}
+          path: |
+            fresh
+            results.md
+            check.txt

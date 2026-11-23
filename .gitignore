@@ -24,3 +24,6 @@ data/live/
 
 # Demo environment runtime files
 demo/run/
+fresh/
+results.md
+check.txt
