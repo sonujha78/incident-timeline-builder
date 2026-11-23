@@ -62,7 +62,7 @@ Times are UTC after clock correction, from 600s before the incident start until 
 | proximity | +39.0 | 40 | 15s before the incident start (lookback 600s) |
 | change_type | +20.0 | 20 | code change reached the service |
 | relation | +15.0 | 15 | same service as the incident (web) |
-| corroboration | +15.0 | 15 | 3 error log(s) and 0 abnormal exit(s) on web between this change and detection |
+| corroboration | +15.0 | 15 | 5 error log(s) and 0 abnormal exit(s) on web between this change and shortly after detection |
 | evidence | +0.0 | 10 | no direct failure signal on a code or config change |
 | stability | +0.0 | - | service was healthy for only 10s after this change (< 60s) |
 

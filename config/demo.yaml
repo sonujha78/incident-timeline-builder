@@ -8,6 +8,7 @@ clock:
         type: deploy
         ref_source: docker
         ref_type: restart
+        ref_action: start     # only the container start follows a deploy
         expected_lag_s: 2     # compose recreate: docker start follows the deploy record by ~2s
 
 ranking:

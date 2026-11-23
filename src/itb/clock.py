@@ -36,30 +36,64 @@ def _raw(e):
     return e.raw_ts or e.ts
 
 
-def _anchor_diffs(events, source, anchors, reference, max_offset_s):
+def _pick_cluster(cands, window_s):
+    """cands: [(offset, target_id, ref_id)]. Return the offsets of the best cluster.
+
+    The right offset is the one that explains the MOST deploys at once. Picking the
+    candidate closest to zero fails when the clock is further off than the gap
+    between two deploys. If two different offsets explain the same number of
+    deploys, both are returned so the caller sees the disagreement.
+    """
+    if not cands:
+        return []
+    cands = sorted(cands)
+    targets = {c[1] for c in cands}
+    clusters = []
+    for i, first in enumerate(cands):
+        used_t, used_r, vals = set(), set(), []
+        for d, tid, rid in cands[i:]:
+            if d - first[0] > window_s:
+                break
+            if tid in used_t or rid in used_r:
+                continue
+            used_t.add(tid)
+            used_r.add(rid)
+            vals.append(d)
+        clusters.append(vals)
+    top = max(len(v) for v in clusters)
+    if top == 1 and len(targets) == 1:
+        return [min((c[0] for c in cands), key=lambda d: (abs(d), d))]
+    tied = sorted((v for v in clusters if len(v) == top),
+                  key=lambda v: (abs(median(v)), median(v)))
+    chosen = list(tied[0])
+    for v in tied[1:]:
+        if abs(median(v) - median(tied[0])) > window_s:
+            chosen += v
+            break
+    return chosen
+
+
+def _anchor_diffs(events, source, anchors, reference, max_offset_s, window_s):
     diffs = []
     for a in anchors:
         if a["source"] != source:
             continue
         lag = float(a.get("expected_lag_s", 0))
         ref_source = a.get("ref_source", reference)
-        targets = sorted((e for e in events
-                          if e.source == source and e.type == a["type"]),
-                         key=lambda e: (_raw(e), e.event_id))
+        ref_action = a.get("ref_action")
+        targets = [e for e in events if e.source == source and e.type == a["type"]]
         refs = [e for e in events
-                if e.source == ref_source and e.type == a["ref_type"]]
-        used = set()
+                if e.source == ref_source and e.type == a["ref_type"]
+                and (not ref_action or (e.attrs or {}).get("action") == ref_action)]
+        cands = []
         for t in targets:
-            best = None
             for r in refs:
-                if r.service != t.service or r.event_id in used:
+                if r.service != t.service:
                     continue
                 d = (_raw(r) - _raw(t)).total_seconds() - lag
-                if abs(d) <= max_offset_s and (best is None or abs(d) < abs(best[0])):
-                    best = (d, r)
-            if best:
-                used.add(best[1].event_id)
-                diffs.append(best[0])
+                if abs(d) <= max_offset_s:
+                    cands.append((d, t.event_id, r.event_id))
+        diffs.extend(_pick_cluster(cands, window_s))
     return diffs
 
 
@@ -67,7 +101,7 @@ def estimate_source(events, source, clock_cfg):
     auto = clock_cfg["auto"]
     reference = clock_cfg["reference_source"]
     diffs = _anchor_diffs(events, source, auto["anchors"], reference,
-                          float(auto["max_offset_s"]))
+                          float(auto["max_offset_s"]), float(auto["max_spread_s"]))
     if not diffs:
         return SkewEstimate(source, 0.0, 0, 0.0, False, "none",
                             "no anchor pairs found, clock left as is")

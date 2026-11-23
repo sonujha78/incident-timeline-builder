@@ -14,6 +14,7 @@ Every number is stored with a plain-text reason so a person can audit the rankin
 
 import re
 from dataclasses import dataclass
+from datetime import timedelta
 
 from .config import load_config
 from .detect import is_bad_probe
@@ -117,13 +118,13 @@ def _rollout_of(e, changes, window_s):
     return best[1] if best else None
 
 
-def _symptoms(events, incident, since, exclude_id):
+def _symptoms(events, incident, since, exclude_id, until=None):
     """Error logs and abnormal exits of the affected service, since..detected_at."""
     logs, exits = [], []
     for e in events:
         if e.event_id == exclude_id or e.service != incident.service:
             continue
-        if not (since <= e.ts <= incident.detected_at):
+        if not (since <= e.ts <= (until or incident.detected_at)):
             continue
         if e.type == "error_log":
             logs.append(e)
@@ -163,21 +164,35 @@ def _evidence(cand, max_points):
                      f"container '{action or 'event'}' is not a failure by itself")
 
 
-def _stability(cand, probes, incident, cfg, det):
+def _settling_marks(events, incident):
+    """Times of deploys, config changes and container starts of the affected service."""
+    return [e.ts for e in events if e.service == incident.service
+            and (e.type in ("deploy", "config")
+                 or (e.type == "restart" and _action(e) in ROLLOUT_ACTIONS))]
+
+
+def _stability(cand, probes, incident, cfg, det, marks=()):
     stable_s = float(cfg["stable_s"])
     penalty = float(cfg["stable_penalty"])
+    settle = float(cfg.get("settle_s", 0) or 0)
     between = [p for p in probes if cand.ts < p.ts < incident.start]
     if not between:
         return Component("stability", 0.0, 0.0,
                          "no probes between this change and the incident start")
-    if any(is_bad_probe(p, det) for p in between):
+
+    def in_rollout(p):
+        return any(0 <= (p.ts - m).total_seconds() <= settle for m in marks)
+
+    unexplained = [p for p in between if is_bad_probe(p, det) and not in_rollout(p)]
+    if unexplained:
         return Component("stability", 0.0, 0.0,
                          "failures were already visible after this change")
     span = (between[-1].ts - cand.ts).total_seconds()
     if span >= stable_s:
         return Component("stability", -penalty, 0.0,
                          f"service stayed healthy for {span:.0f}s after this change "
-                         f"(>= {stable_s:.0f}s), so it is a weaker suspect")
+                         f"(>= {stable_s:.0f}s; probe failures within {settle:.0f}s of a "
+                         f"rollout ignored), so it is a weaker suspect")
     return Component("stability", 0.0, 0.0,
                      f"service was healthy for only {span:.0f}s after this change "
                      f"(< {stable_s:.0f}s)")
@@ -203,7 +218,8 @@ def _score(cand, events, probes, incident, cfg, det):
     comps.append(Component("change_type", float(tw.get(cand.type, 0)),
                            float(max(tw.values())), TYPE_TEXT.get(cand.type, cand.type)))
 
-    logs, exits = _symptoms(events, incident, cand.ts, cand.event_id)
+    until = incident.detected_at + timedelta(seconds=float(cfg.get("symptom_window_s", 0) or 0))
+    logs, exits = _symptoms(events, incident, cand.ts, cand.event_id, until)
     comps.append(_relation(cand, incident, logs, float(w["relation"])))
 
     n = len(logs) + len(exits)
@@ -211,10 +227,11 @@ def _score(cand, events, probes, incident, cfg, det):
     comps.append(Component(
         "corroboration", round(cmax * min(n, 3) / 3, 2), cmax,
         f"{len(logs)} error log(s) and {len(exits)} abnormal exit(s) on "
-        f"{incident.service} between this change and detection"))
+        f"{incident.service} between this change and shortly after detection"))
 
     comps.append(_evidence(cand, float(w["evidence"])))
-    comps.append(_stability(cand, probes, incident, cfg, det))
+    comps.append(_stability(cand, probes, incident, cfg, det,
+                            _settling_marks(events, incident)))
 
     total = sum(c.points for c in comps)
     return round(max(0.0, min(100.0, total)), 1), tuple(comps)
