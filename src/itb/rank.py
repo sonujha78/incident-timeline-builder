@@ -350,6 +350,12 @@ def assess_confidence(suspects, cfg, caveats=(), severe=()):
         else:
             reasons.append(f"lead is below {mm:g} points: the top suspects are too close to separate")
 
+    stab = [c for c in suspects[0].components if c.name == "stability" and c.points < 0]
+    if stab and level != "low":
+        level = "low"
+        reasons.append("capped at low: the service stayed healthy for a long time after "
+                       "the top suspect, so the incident began long after this change "
+                       "(a delayed effect is possible but the data does not show it)")
     if caveats:
         reasons.extend(caveats)
         if level == "high":
