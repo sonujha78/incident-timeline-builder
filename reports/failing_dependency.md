@@ -4,7 +4,7 @@
 
 ## Summary
 
-Service `web` was unhealthy from 2026-11-23 04:45:41Z until 2026-11-23 04:46:51Z (1m 10s (70s)). 70 of 70 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The tool has LOW confidence. The best-scoring candidate is the deploy `760d4ee tune log format` on `web` at 04:45:30Z, 11s before the incident start (score 74.3/100), but this is not enough to call it the cause.
+Service `web` was unhealthy from 2026-11-23 04:45:41Z until 2026-11-23 04:46:51Z (1m 10s (70s)). 70 of 70 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The most likely trigger is the restart `container itb-db kill` on `db` at 04:45:40Z, 1s before the incident start (score 87.9/100, confidence HIGH).
 
 ## Impact
 
@@ -35,15 +35,15 @@ Times are UTC after clock correction, from 600s before the incident start until 
 
 | Time (UTC) | Source | Type | Service | What happened | Note |
 |---|---|---|---|---|---|
-| 04:43:58Z | docker | restart | db | container itb-db start |  |
-| 04:43:59Z | docker | restart | web | container itb-web start | suspect #5 |
-| 04:44:30Z | docker | restart | web | container itb-web kill | suspect #3 |
+| 04:43:57Z | git | deploy | web | 4d9e56a initial release v1 | suspect #3; clock -61s, raw 04:44:58Z |
+| 04:43:58Z | docker | restart | db | container itb-db start | suspect #4 |
+| 04:43:59Z | docker | restart | web | container itb-web start |  |
+| 04:44:29Z | git | deploy | web | 760d4ee tune log format | suspect #2; clock -61s, raw 04:45:30Z |
+| 04:44:30Z | docker | restart | web | container itb-web kill |  |
 | 04:44:30Z | docker | restart | web | container itb-web stop |  |
 | 04:44:30Z | docker | restart | web | container itb-web die (exit 0) |  |
 | 04:44:31Z | docker | restart | web | container itb-web start |  |
-| 04:44:58Z | git | deploy | web | 4d9e56a initial release v1 | suspect #2 |
-| 04:45:30Z | git | deploy | web | 760d4ee tune log format | suspect #1 |
-| 04:45:40Z | docker | restart | db | container itb-db kill | suspect #4 |
+| 04:45:40Z | docker | restart | db | container itb-db kill | suspect #1 |
 | 04:45:40Z | docker | restart | db | container itb-db die (exit 137) |  |
 | 04:45:41Z | health | START | web | **Incident start (first bad probe)** |  |
 | 04:45:43Z | health | DETECTED | web | **Detected (3 bad probes in a row)** |  |
@@ -54,50 +54,47 @@ Times are UTC after clock correction, from 600s before the incident start until 
 
 ## Most likely trigger
 
-**No clear trigger (LOW confidence).** Best-scoring candidate, shown as a lead only, not a conclusion:
+**Most likely trigger (HIGH confidence):**
 
-- **Change:** deploy from git on `web` at 2026-11-23 04:45:30Z (11s before the incident start)
-- **What:** 760d4ee tune log format
-- **Commit:** `760d4ee` by demo-dev
-- **Files changed:** `app/logging.py`
-- **Score:** 74.3/100
+- **Change:** restart from docker on `db` at 2026-11-23 04:45:40Z (1s before the incident start)
+- **What:** container itb-db kill
+- **Score:** 87.9/100
 
 ### Score breakdown (every point has a reason)
 
 | Component | Points | Max | Reason |
 |---|---|---|---|
-| proximity | +39.3 | 40 | 11s before the incident start (lookback 600s) |
-| change_type | +20.0 | 20 | code change reached the service |
-| relation | +15.0 | 15 | same service as the incident (web) |
-| corroboration | +0.0 | 15 | 0 error log(s) and 0 abnormal exit(s) on web between this change and detection |
-| evidence | +0.0 | 10 | no direct failure signal on a code or config change |
-| stability | +0.0 | - | service was healthy for only 10s after this change (< 60s) |
+| proximity | +39.9 | 40 | 1s before the incident start (lookback 600s) |
+| change_type | +8.0 | 20 | container lifecycle event |
+| relation | +15.0 | 15 | 12 error log(s) on web mention 'db' |
+| corroboration | +15.0 | 15 | 12 error log(s) and 0 abnormal exit(s) on web between this change and shortly after detection |
+| evidence | +10.0 | 10 | abnormal container exit (kill, exit code n/a) |
+| stability | +0.0 | - | no probes between this change and the incident start |
 
 ### Other candidates
 
 | Rank | Score | Time | Type | Service | Change | Lead time |
 |---|---|---|---|---|---|---|
-| #2 | 72.1 | 04:44:58Z | deploy | web | 4d9e56a initial release v1 | 43s |
-| #3 | 68.3 | 04:44:30Z | restart | web | container itb-web kill | 71s |
-| #4 | 57.9 | 04:45:40Z | restart | db | container itb-db kill | 1s |
-| #5 | 56.2 | 04:43:59Z | restart | web | container itb-web start | 102s |
+| #2 | 60.2 | 04:44:29Z | deploy | web | 760d4ee tune log format | 72s |
+| #3 | 58.1 | 04:43:57Z | deploy | web | 4d9e56a initial release v1 | 104s |
+| #4 | 46.2 | 04:43:58Z | restart | db | container itb-db start | 102s |
 
 ### Events that were not treated as suspects
 
-- 04:44:30Z restart on `web`: 'die' of the affected service is a symptom, not a cause
-- 04:44:30Z restart on `web`: 'stop' follows 'kill' of the same container within 5s: one failure, counted once
-- 04:44:31Z restart on `web`: 'start' follows 'kill' of the same container within 5s: one failure, counted once
+- 04:43:59Z restart on `web`: container start is part of the rollout of deploy '4d9e56a initial release v1', not an independent cause
+- 04:44:30Z restart on `web`: container kill is part of the rollout of deploy '760d4ee tune log format', not an independent cause
+- 04:44:30Z restart on `web`: container stop is part of the rollout of deploy '760d4ee tune log format', not an independent cause
+- 04:44:30Z restart on `web`: container die is part of the rollout of deploy '760d4ee tune log format', not an independent cause
+- 04:44:31Z restart on `web`: container start is part of the rollout of deploy '760d4ee tune log format', not an independent cause
 - 04:45:40Z restart on `db`: 'die' follows 'kill' of the same container within 5s: one failure, counted once
 
 ## Confidence
 
-**LOW** (top score 74.3/100, lead over the runner-up 2.2 points)
+**HIGH** (top score 87.9/100, lead over the runner-up 27.7 points)
 
-- top suspect scored 74.3/100
-- it leads the runner-up by 2.2 points
-- lead is below 8 points: the top suspects are too close to separate
-- clock of 'git' could not be corrected (anchor offsets disagree (spread 16.129s > 10s); not corrected, order is uncertain); event order near the incident start may be wrong
-- 2 container start(s) appear BEFORE the change they should follow (e.g. start on web at 04:43:59Z comes 59s before deploy '4d9e56a initial release v1'): source clocks probably disagree
+- top suspect scored 87.9/100
+- it leads the runner-up by 27.7 points
+- score >= 70 and lead >= 15: clear winner
 
 _Scores are heuristic points (0-100), not probabilities. A high score means the change fits the timing and the symptoms, not that it is proven to be the cause._
 
@@ -107,19 +104,16 @@ _Scores are heuristic points (0-100), not probabilities. A high score means the 
 |---|---|---|---|---|
 | applog | none | +0.0s | no | no anchor pairs found, clock left as is |
 | docker | reference | +0.0s | no | reference clock |
-| git | auto | -45.4s | no | anchor offsets disagree (spread 16.129s > 10s); not corrected, order is uncertain |
+| git | auto | -61.0s | yes | median of 2 anchor pairs, spread 0.083s |
 | health | none | +0.0s | no | no anchor pairs found, clock left as is |
 
 Each event keeps its raw time; a corrected event shows the correction in the Note column of the timeline.
 
 ## What to check next
 
-1. Read the code change of the top suspect with `git show 760d4ee`. Look for what could break `web` (new dependency, protocol, timeout, pool size).
-2. If the symptoms match the change, roll it back or hotfix it and watch the next probes for recovery.
-3. Confidence is LOW: treat the top suspect as a lead, not a fact. Look for evidence that separates it from the alternatives, for example roll back only that change and watch the probes.
-4. Candidates #1 and #2 are too close to separate. Compare what each one touched and test them one at a time.
-5. Fix time sync (NTP/chrony) on the sources named in the confidence section and run the analysis again. Event order is unreliable until then.
-6. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
+1. The top suspect is on `db`, not on `web`: check the health and logs of `db` first.
+2. Check memory limits and usage of `itb-db` (`docker inspect itb-db` for OOMKilled, `docker stats`). Look for a leak or a limit that is too low.
+3. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
 
 ## To be completed by a human
 

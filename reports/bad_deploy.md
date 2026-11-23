@@ -4,7 +4,7 @@
 
 ## Summary
 
-Service `web` was unhealthy from 2026-11-22 11:28:01Z until 2026-11-22 11:29:11Z (1m 10s (70s)). 70 of 70 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The tool has LOW confidence. The best-scoring candidate is the deploy `26edf44 bump http client timeout, token=[REDACTED] on `web` at 11:27:50Z, 11s before the incident start (score 84.3/100), but this is not enough to call it the cause.
+Service `web` was unhealthy from 2026-11-22 11:28:01Z until 2026-11-22 11:29:11Z (1m 10s (70s)). 70 of 70 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The most likely trigger is the deploy `eb8c8c1 switch to new db driver` on `web` at 11:27:59Z, 2s before the incident start (score 89.8/100, confidence HIGH).
 
 ## Impact
 
@@ -35,77 +35,78 @@ Times are UTC after clock correction, from 600s before the incident start until 
 
 | Time (UTC) | Source | Type | Service | What happened | Note |
 |---|---|---|---|---|---|
-| 11:26:20Z | docker | restart | db | container itb-db start |  |
+| 11:26:18Z | git | deploy | web | 4d9e56a initial release v1 | suspect #3; clock -61s, raw 11:27:19Z |
+| 11:26:20Z | docker | restart | db | container itb-db start | suspect #4 |
 | 11:26:20Z | docker | restart | web | container itb-web start |  |
-| 11:26:50Z | docker | restart | web | container itb-web kill | suspect #3 |
-| 11:26:50Z | docker | restart | web | container itb-web stop | suspect #4 |
+| 11:26:49Z | git | deploy | web | 26edf44 bump http client timeout, token=[REDACTED] | suspect #2; clock -61s, raw 11:27:50Z |
+| 11:26:50Z | docker | restart | web | container itb-web kill |  |
+| 11:26:50Z | docker | restart | web | container itb-web stop |  |
 | 11:26:50Z | docker | restart | web | container itb-web die (exit 0) |  |
-| 11:26:51Z | docker | restart | web | container itb-web start | suspect #5 |
-| 11:27:19Z | git | deploy | web | 4d9e56a initial release v1 | suspect #2 |
-| 11:27:50Z | git | deploy | web | 26edf44 bump http client timeout, token=[REDACTED] | suspect #1 |
+| 11:26:51Z | docker | restart | web | container itb-web start |  |
+| 11:27:59Z | git | deploy | web | eb8c8c1 switch to new db driver | suspect #1; clock -61s, raw 11:29:00Z |
 | 11:28:00Z | docker | restart | web | container itb-web kill |  |
 | 11:28:00Z | docker | restart | web | container itb-web stop |  |
 | 11:28:00Z | docker | restart | web | container itb-web die (exit 0) |  |
 | 11:28:01Z | docker | restart | web | container itb-web start |  |
 | 11:28:01Z | health | START | web | **Incident start (first bad probe)** |  |
-| 11:28:01Z | applog | error_log | web | unsupported protocol in new db driver, password=[REDACTED] | x59 until 11:28:59Z |
+| 11:28:01Z | applog | error_log | web | unsupported protocol in new db driver, password=[REDACTED] | x68 until 11:29:08Z |
 | 11:28:03Z | health | DETECTED | web | **Detected (3 bad probes in a row)** |  |
-| 11:29:00Z | git | deploy | web | eb8c8c1 switch to new db driver |  |
-| 11:29:00Z | applog | error_log | web | unsupported protocol in new db driver, password=[REDACTED] | x11 until 11:29:10Z |
+| 11:29:09Z | git | deploy | web | d733665 rollback: revert new db driver | clock -61s, raw 11:30:10Z |
+| 11:29:09Z | applog | error_log | web | unsupported protocol in new db driver, password=[REDACTED] | x2 until 11:29:10Z |
 | 11:29:10Z | docker | restart | web | container itb-web kill |  |
 | 11:29:10Z | docker | restart | web | container itb-web stop |  |
 | 11:29:10Z | docker | restart | web | container itb-web die (exit 0) |  |
 | 11:29:11Z | docker | restart | web | container itb-web start |  |
 | 11:29:11Z | health | RECOVERED | web | **Recovered (first good probe of the recovery)** |  |
-| 11:30:10Z | git | deploy | web | d733665 rollback: revert new db driver |  |
 
 ## Most likely trigger
 
-**No clear trigger (LOW confidence).** Best-scoring candidate, shown as a lead only, not a conclusion:
+**Most likely trigger (HIGH confidence):**
 
-- **Change:** deploy from git on `web` at 2026-11-22 11:27:50Z (11s before the incident start)
-- **What:** 26edf44 bump http client timeout, token=[REDACTED]
-- **Commit:** `26edf44` by demo-dev
-- **Files changed:** `app/http_client.py`
-- **Score:** 84.3/100
+- **Change:** deploy from git on `web` at 2026-11-22 11:27:59Z (2s before the incident start)
+- **What:** eb8c8c1 switch to new db driver
+- **Commit:** `eb8c8c1` by demo-dev
+- **Files changed:** `app/db_client.py`, `requirements.txt`
+- **Score:** 89.8/100
 
 ### Score breakdown (every point has a reason)
 
 | Component | Points | Max | Reason |
 |---|---|---|---|
-| proximity | +39.3 | 40 | 11s before the incident start (lookback 600s) |
+| proximity | +39.8 | 40 | 2s before the incident start (lookback 600s) |
 | change_type | +20.0 | 20 | code change reached the service |
 | relation | +15.0 | 15 | same service as the incident (web) |
-| corroboration | +10.0 | 15 | 2 error log(s) and 0 abnormal exit(s) on web between this change and detection |
+| corroboration | +15.0 | 15 | 17 error log(s) and 0 abnormal exit(s) on web between this change and shortly after detection |
 | evidence | +0.0 | 10 | no direct failure signal on a code or config change |
-| stability | +0.0 | - | service was healthy for only 10s after this change (< 60s) |
+| stability | +0.0 | - | service was healthy for only 1s after this change (< 60s) |
 
 ### Other candidates
 
 | Rank | Score | Time | Type | Service | Change | Lead time |
 |---|---|---|---|---|---|---|
-| #2 | 82.2 | 11:27:19Z | deploy | web | 4d9e56a initial release v1 | 42s |
-| #3 | 53.3 | 11:26:50Z | restart | web | container itb-web kill | 71s |
-| #4 | 48.3 | 11:26:50Z | restart | web | container itb-web stop | 71s |
-| #5 | 43.3 | 11:26:51Z | restart | web | container itb-web start | 70s |
+| #2 | 60.2 | 11:26:49Z | deploy | web | 26edf44 bump http client timeout, token=[REDACTED] | 72s |
+| #3 | 58.1 | 11:26:18Z | deploy | web | 4d9e56a initial release v1 | 103s |
+| #4 | 46.2 | 11:26:20Z | restart | db | container itb-db start | 102s |
 
 ### Events that were not treated as suspects
 
-- 11:26:50Z restart on `web`: 'die' of the affected service is a symptom, not a cause
-- 11:28:00Z restart on `web`: container kill is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
-- 11:28:00Z restart on `web`: container stop is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
-- 11:28:00Z restart on `web`: container die is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
-- 11:28:01Z restart on `web`: container start is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
+- 11:26:20Z restart on `web`: container start is part of the rollout of deploy '4d9e56a initial release v1', not an independent cause
+- 11:26:50Z restart on `web`: container kill is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
+- 11:26:50Z restart on `web`: container stop is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
+- 11:26:50Z restart on `web`: container die is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
+- 11:26:51Z restart on `web`: container start is part of the rollout of deploy '26edf44 bump http client timeout, token=[REDACTED]', not an independent cause
+- 11:28:00Z restart on `web`: container kill is part of the rollout of deploy 'eb8c8c1 switch to new db driver', not an independent cause
+- 11:28:00Z restart on `web`: container stop is part of the rollout of deploy 'eb8c8c1 switch to new db driver', not an independent cause
+- 11:28:00Z restart on `web`: container die is part of the rollout of deploy 'eb8c8c1 switch to new db driver', not an independent cause
+- 11:28:01Z restart on `web`: container start is part of the rollout of deploy 'eb8c8c1 switch to new db driver', not an independent cause
 
 ## Confidence
 
-**LOW** (top score 84.3/100, lead over the runner-up 2.1 points)
+**HIGH** (top score 89.8/100, lead over the runner-up 29.6 points)
 
-- top suspect scored 84.3/100
-- it leads the runner-up by 2.1 points
-- lead is below 8 points: the top suspects are too close to separate
-- clock of 'git' could not be corrected (anchor offsets disagree (spread 50.306s > 10s); not corrected, order is uncertain); event order near the incident start may be wrong
-- 2 container start(s) appear BEFORE the change they should follow (e.g. start on web at 11:26:20Z comes 59s before deploy '4d9e56a initial release v1'): source clocks probably disagree
+- top suspect scored 89.8/100
+- it leads the runner-up by 29.6 points
+- score >= 70 and lead >= 15: clear winner
 
 _Scores are heuristic points (0-100), not probabilities. A high score means the change fits the timing and the symptoms, not that it is proven to be the cause._
 
@@ -115,19 +116,16 @@ _Scores are heuristic points (0-100), not probabilities. A high score means the 
 |---|---|---|---|---|
 | applog | none | +0.0s | no | no anchor pairs found, clock left as is |
 | docker | reference | +0.0s | no | reference clock |
-| git | auto | -11.2s | no | anchor offsets disagree (spread 50.306s > 10s); not corrected, order is uncertain |
+| git | auto | -61.5s | yes | median of 4 anchor pairs, spread 0.018s |
 | health | none | +0.0s | no | no anchor pairs found, clock left as is |
 
 Each event keeps its raw time; a corrected event shows the correction in the Note column of the timeline.
 
 ## What to check next
 
-1. Read the code change of the top suspect with `git show 26edf44`. Look for what could break `web` (new dependency, protocol, timeout, pool size).
+1. Read the code change of the top suspect with `git show eb8c8c1`. Look for what could break `web` (new dependency, protocol, timeout, pool size).
 2. If the symptoms match the change, roll it back or hotfix it and watch the next probes for recovery.
-3. Confidence is LOW: treat the top suspect as a lead, not a fact. Look for evidence that separates it from the alternatives, for example roll back only that change and watch the probes.
-4. Candidates #1 and #2 are too close to separate. Compare what each one touched and test them one at a time.
-5. Fix time sync (NTP/chrony) on the sources named in the confidence section and run the analysis again. Event order is unreliable until then.
-6. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
+3. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
 
 ## To be completed by a human
 

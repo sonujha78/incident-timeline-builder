@@ -4,7 +4,7 @@
 
 ## Summary
 
-Service `web` was unhealthy from 2026-11-23 04:52:08Z until 2026-11-23 04:53:06Z (58s). 58 of 58 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The tool has LOW confidence. The best-scoring candidate is the deploy `cbbb189 tune thread pool size` on `web` at 04:51:45Z, 23s before the incident start (score 83.5/100), but this is not enough to call it the cause.
+Service `web` was unhealthy from 2026-11-23 04:52:08Z until 2026-11-23 04:53:06Z (58s). 58 of 58 health probes in that window were bad (peak error rate 0). The incident was detected 2s after the first bad probe. The most likely trigger is the deploy `f04f65c add in-memory image cache` on `web` at 04:51:54Z, 14s before the incident start (score 84.0/100, confidence HIGH).
 
 ## Impact
 
@@ -32,14 +32,15 @@ Times are UTC after clock correction, from 600s before the incident start until 
 
 | Time (UTC) | Source | Type | Service | What happened | Note |
 |---|---|---|---|---|---|
-| 04:50:14Z | docker | restart | db | container itb-db start | suspect #5 |
-| 04:50:15Z | docker | restart | web | container itb-web start | suspect #4 |
-| 04:50:45Z | docker | restart | web | container itb-web kill | suspect #3 |
+| 04:50:12Z | git | deploy | web | 4d9e56a initial release v1 | suspect #3; clock -61s, raw 04:51:14Z |
+| 04:50:14Z | docker | restart | db | container itb-db start | suspect #4 |
+| 04:50:15Z | docker | restart | web | container itb-web start |  |
+| 04:50:44Z | git | deploy | web | cbbb189 tune thread pool size | suspect #2; clock -61s, raw 04:51:45Z |
+| 04:50:45Z | docker | restart | web | container itb-web kill |  |
 | 04:50:45Z | docker | restart | web | container itb-web stop |  |
 | 04:50:45Z | docker | restart | web | container itb-web die (exit 0) |  |
 | 04:50:46Z | docker | restart | web | container itb-web start |  |
-| 04:51:14Z | git | deploy | web | 4d9e56a initial release v1 | suspect #2 |
-| 04:51:45Z | git | deploy | web | cbbb189 tune thread pool size | suspect #1 |
+| 04:51:54Z | git | deploy | web | f04f65c add in-memory image cache | suspect #1; clock -61s, raw 04:52:55Z |
 | 04:51:55Z | docker | restart | web | container itb-web kill |  |
 | 04:51:56Z | docker | restart | web | container itb-web stop |  |
 | 04:51:56Z | docker | restart | web | container itb-web die (exit 0) |  |
@@ -48,62 +49,60 @@ Times are UTC after clock correction, from 600s before the incident start until 
 | 04:52:08Z | docker | restart | web | container itb-web die (exit 137) |  |
 | 04:52:08Z | health | START | web | **Incident start (first bad probe)** |  |
 | 04:52:10Z | health | DETECTED | web | **Detected (3 bad probes in a row)** |  |
-| 04:52:55Z | git | deploy | web | f04f65c add in-memory image cache |  |
+| 04:53:04Z | git | deploy | web | 0ae2059 rollback: remove in-memory image cache | clock -61s, raw 04:54:05Z |
 | 04:53:06Z | docker | restart | web | container itb-web start |  |
 | 04:53:06Z | health | RECOVERED | web | **Recovered (first good probe of the recovery)** |  |
-| 04:54:05Z | git | deploy | web | 0ae2059 rollback: remove in-memory image cache |  |
 
 ## Most likely trigger
 
-**No clear trigger (LOW confidence).** Best-scoring candidate, shown as a lead only, not a conclusion:
+**Most likely trigger (HIGH confidence):**
 
-- **Change:** deploy from git on `web` at 2026-11-23 04:51:45Z (23s before the incident start)
-- **What:** cbbb189 tune thread pool size
-- **Commit:** `cbbb189` by demo-dev
-- **Files changed:** `app/pool.py`
-- **Score:** 83.5/100
+- **Change:** deploy from git on `web` at 2026-11-23 04:51:54Z (14s before the incident start)
+- **What:** f04f65c add in-memory image cache
+- **Commit:** `f04f65c` by demo-dev
+- **Files changed:** `app/cache.py`
+- **Score:** 84.0/100
 
 ### Score breakdown (every point has a reason)
 
 | Component | Points | Max | Reason |
 |---|---|---|---|
-| proximity | +38.5 | 40 | 23s before the incident start (lookback 600s) |
+| proximity | +39.0 | 40 | 14s before the incident start (lookback 600s) |
 | change_type | +20.0 | 20 | code change reached the service |
 | relation | +15.0 | 15 | same service as the incident (web) |
-| corroboration | +10.0 | 15 | 0 error log(s) and 2 abnormal exit(s) on web between this change and detection |
+| corroboration | +10.0 | 15 | 0 error log(s) and 2 abnormal exit(s) on web between this change and shortly after detection |
 | evidence | +0.0 | 10 | no direct failure signal on a code or config change |
-| stability | +0.0 | - | failures were already visible after this change |
+| stability | +0.0 | - | service was healthy for only 13s after this change (< 60s) |
 
 ### Other candidates
 
 | Rank | Score | Time | Type | Service | Change | Lead time |
 |---|---|---|---|---|---|---|
-| #2 | 81.4 | 04:51:14Z | deploy | web | 4d9e56a initial release v1 | 54s |
-| #3 | 77.5 | 04:50:45Z | restart | web | container itb-web kill | 83s |
-| #4 | 65.4 | 04:50:15Z | restart | web | container itb-web start | 114s |
-| #5 | 50.4 | 04:50:14Z | restart | db | container itb-db start | 114s |
+| #2 | 54.4 | 04:50:44Z | deploy | web | cbbb189 tune thread pool size | 84s |
+| #3 | 52.3 | 04:50:12Z | deploy | web | 4d9e56a initial release v1 | 116s |
+| #4 | 25.4 | 04:50:14Z | restart | db | container itb-db start | 114s |
 
 ### Events that were not treated as suspects
 
-- 04:50:45Z restart on `web`: 'die' of the affected service is a symptom, not a cause
-- 04:51:55Z restart on `web`: container kill is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
-- 04:51:56Z restart on `web`: container stop is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
-- 04:51:56Z restart on `web`: container die is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
-- 04:51:56Z restart on `web`: container start is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
+- 04:50:15Z restart on `web`: container start is part of the rollout of deploy '4d9e56a initial release v1', not an independent cause
+- 04:50:45Z restart on `web`: container kill is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
+- 04:50:45Z restart on `web`: container stop is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
+- 04:50:45Z restart on `web`: container die is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
+- 04:50:46Z restart on `web`: container start is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
+- 04:51:55Z restart on `web`: container kill is part of the rollout of deploy 'f04f65c add in-memory image cache', not an independent cause
+- 04:51:56Z restart on `web`: container stop is part of the rollout of deploy 'f04f65c add in-memory image cache', not an independent cause
+- 04:51:56Z restart on `web`: container die is part of the rollout of deploy 'f04f65c add in-memory image cache', not an independent cause
+- 04:51:56Z restart on `web`: container start is part of the rollout of deploy 'f04f65c add in-memory image cache', not an independent cause
 - 04:52:08Z restart on `web`: 'oom' of the affected service is a symptom, not a cause
-- 04:52:08Z restart on `web`: container die is part of the rollout of deploy 'cbbb189 tune thread pool size', not an independent cause
-- 04:50:45Z restart on `web`: 'stop' follows 'kill' of the same container within 5s: one failure, counted once
-- 04:50:46Z restart on `web`: 'start' follows 'kill' of the same container within 5s: one failure, counted once
+- 04:52:08Z restart on `web`: container die is part of the rollout of deploy 'f04f65c add in-memory image cache', not an independent cause
 
 ## Confidence
 
-**LOW** (top score 83.5/100, lead over the runner-up 2.1 points)
+**HIGH** (top score 84.0/100, lead over the runner-up 29.6 points)
 
-- top suspect scored 83.5/100
-- it leads the runner-up by 2.1 points
-- lead is below 8 points: the top suspects are too close to separate
-- clock of 'git' could not be corrected (anchor offsets disagree (spread 108.533s > 10s); not corrected, order is uncertain); event order near the incident start may be wrong
-- 2 container start(s) appear BEFORE the change they should follow (e.g. start on web at 04:50:15Z comes 59s before deploy '4d9e56a initial release v1'): source clocks probably disagree
+- top suspect scored 84.0/100
+- it leads the runner-up by 29.6 points
+- score >= 70 and lead >= 15: clear winner
 
 _Scores are heuristic points (0-100), not probabilities. A high score means the change fits the timing and the symptoms, not that it is proven to be the cause._
 
@@ -112,20 +111,17 @@ _Scores are heuristic points (0-100), not probabilities. A high score means the 
 | Source | Method | Offset | Applied | Note |
 |---|---|---|---|---|
 | docker | reference | +0.0s | no | reference clock |
-| git | auto | -10.9s | no | anchor offsets disagree (spread 108.533s > 10s); not corrected, order is uncertain |
+| git | auto | -61.4s | yes | median of 4 anchor pairs, spread 0.154s |
 | health | none | +0.0s | no | no anchor pairs found, clock left as is |
 
 Each event keeps its raw time; a corrected event shows the correction in the Note column of the timeline.
 
 ## What to check next
 
-1. Read the code change of the top suspect with `git show cbbb189`. Look for what could break `web` (new dependency, protocol, timeout, pool size).
+1. Read the code change of the top suspect with `git show f04f65c`. Look for what could break `web` (new dependency, protocol, timeout, pool size).
 2. If the symptoms match the change, roll it back or hotfix it and watch the next probes for recovery.
-3. Confidence is LOW: treat the top suspect as a lead, not a fact. Look for evidence that separates it from the alternatives, for example roll back only that change and watch the probes.
-4. Candidates #1 and #2 are too close to separate. Compare what each one touched and test them one at a time.
-5. Fix time sync (NTP/chrony) on the sources named in the confidence section and run the analysis again. Event order is unreliable until then.
-6. No events were collected from: applog. Adding them gives the ranking more evidence.
-7. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
+3. No events were collected from: applog. Adding them gives the ranking more evidence.
+4. Once the real cause is known, write it in the last section and compare it with this ranking. A wrong ranking is useful feedback.
 
 ## To be completed by a human
 
