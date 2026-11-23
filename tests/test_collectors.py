@@ -59,9 +59,8 @@ def test_applog_parses_errors_and_applies_source_tz(tmp_path):
     )
     p = write(tmp_path, "app.log", text)
     evs = applog_source.collect(p, tz=IST)
-    assert len(evs) == 1                      # INFO skipped, garbage skipped
-    assert evs[0].ts.isoformat() == "2026-01-01T10:00:05.250000+00:00"
-    assert evs[0].type == "error_log"
+    assert [e.type for e in evs] == ["info", "error_log"]   # garbage skipped
+    assert evs[1].ts.isoformat() == "2026-01-01T10:00:05.250000+00:00"
 
 
 def test_health_ok_and_fail(tmp_path):
