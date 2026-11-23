@@ -16,8 +16,6 @@ it says so instead of guessing.
 Everything runs locally and in CI, with no paid service. The analysis works from recorded data files, so the
 same incident always gives the same report.
 
-> Project 3 of my DevOps portfolio. Python (standard library + PyYAML), Docker Compose for the demo environment.
-
 ---
 
 ## Results at a glance
