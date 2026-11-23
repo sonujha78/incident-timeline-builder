@@ -1,0 +1,9 @@
+{
+  "description": "The database container is killed; web health fails until it is started again.",
+  "name": "failing_dependency",
+  "probe_interval_s": 1.0,
+  "recorded_with": "demo/scenario.py",
+  "source_tz": {
+    "applog": "+05:30"
+  }
+}

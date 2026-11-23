@@ -1,0 +1,5 @@
+2026-11-23 10:20:15,055 INFO db: starting
+2026-11-23 10:20:15,472 INFO web: starting version=v1 bug=none db_url=postgres://app:[REDACTED]@db:8081/orders
+2026-11-23 10:20:46,745 INFO web: starting version=v1.1 bug=none db_url=postgres://app:[REDACTED]@db:8081/orders
+2026-11-23 10:21:56,737 INFO web: starting version=v2 bug=leak db_url=postgres://app:[REDACTED]@db:8081/orders
+2026-11-23 10:23:06,593 INFO web: starting version=v1.1 bug=none db_url=postgres://app:[REDACTED]@db:8081/orders

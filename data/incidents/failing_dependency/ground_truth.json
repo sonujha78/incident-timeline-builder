@@ -1,0 +1,18 @@
+{
+  "cause": {
+    "match": "itb-db",
+    "service": "db",
+    "type": "restart"
+  },
+  "description": "The database container is killed; web health fails until it is started again.",
+  "incident_type": "failing dependency",
+  "injected": {
+    "applog_timezone": "+05:30",
+    "git_clock_skew_s": 60.0,
+    "probe_interval_s": 1.0
+  },
+  "name": "failing_dependency",
+  "tolerance_s": 5.0,
+  "true_end": "2026-11-23T04:46:50.667+00:00",
+  "true_start": "2026-11-23T04:45:40.147+00:00"
+}

@@ -1,0 +1,15 @@
+{
+  "cause": null,
+  "description": "An upstream problem breaks web with no change recorded; only old harmless deploys exist.",
+  "expect_confidence": "low",
+  "incident_type": "no clear cause",
+  "injected": {
+    "applog_timezone": "+05:30",
+    "git_clock_skew_s": 60.0,
+    "probe_interval_s": 1.0
+  },
+  "name": "no_clear_cause",
+  "tolerance_s": 5.0,
+  "true_end": "2026-11-23T04:58:12.052+00:00",
+  "true_start": "2026-11-23T04:57:02.044+00:00"
+}
